@@ -3,40 +3,117 @@
     <thead>
       <tr class="bg-gray-100 border-b-2 border-gray-400">
         <th></th>
-        <th>
-          <span>Ranking</span>
+        <th :class="{ up: this.sortOrder, down: this.sortOrder === -1 }">
+          <span class="underline cursor-pointer" @click="changeSortOrder">
+            Rank
+          </span>
         </th>
         <th>Name</th>
         <th>Price</th>
-        <th>Market capacity</th>
-        <th>Variation 24hs.</th>
-        <td class="hidden sm:block"></td>
+        <th>Market Cap</th>
+        <th>VWAP (24hs)</th>
+        <td class="hidden sm:block">
+          <input
+            class="bg-gray-100 focus:outline-none border-b border-gray-400 py-2 px-4 block w-full appearance-none leading-normal"
+            id="filter"
+            placeholder="Search..."
+            type="text"
+            v-model="filter"
+          />
+        </td>
       </tr>
     </thead>
     <tbody>
       <tr
+        v-for="a in filteredAssets"
+        :key="a.id"
         class="border-b border-gray-200 hover:bg-gray-100 hover:bg-orange-100"
       >
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td class="hidden sm:block"></td>
+        <td>
+          <img
+            class="w-6 h-6"
+            :src="
+              `https://static.coincap.io/assets/icons/${a.symbol.toLowerCase()}@2x.png`
+            "
+            :alt="a.name"
+          />
+        </td>
+        <td>{{ a.rank }}</td>
+        <td>
+          <router-link
+            class="hover:underline"
+            :to="{ name: 'coin-detail', params: { id: a.id } }"
+          >
+            {{ a.name }}
+          </router-link>
+          <small class="ml-1 text-gray-500">{{ a.symbol }}</small>
+        </td>
+        <td>{{ a.priceUsd | dollar }}</td>
+        <td>{{ a.marketCapUsd | dollar }}</td>
+        <td
+          :class="
+            a.changePercent24Hr >= parseInt(0)
+              ? 'text-green-600'
+              : 'text-red-600'
+          "
+        >
+          {{ a.changePercent24Hr | percent }}
+        </td>
+        <td class="hidden sm:block">
+          <app-button @my-click="goToCoin(a.id)">Detail</app-button>
+        </td>
       </tr>
     </tbody>
   </table>
 </template>
 
 <script>
+import AppButton from '@/components/AppButton';
+
 export default {
-  name: "AssetsTable",
+  name: 'AssetsTable',
+
+  data() {
+    return {
+      filter: '',
+      sortOrder: 1
+    };
+  },
+
+  computed: {
+    filteredAssets() {
+      const altOrder = this.sortOrder === 1 ? -1 : 1;
+
+      return this.assets
+        .filter(
+          a =>
+            a.symbol.toLowerCase().includes(this.filter.toLowerCase()) ||
+            a.name.toLowerCase().includes(this.filter.toLowerCase())
+        )
+        .sort((a, b) => {
+          if (parseInt(a.rank) > parseInt(b.rank)) return this.sortOrder;
+
+          return altOrder;
+        });
+    }
+  },
 
   props: {
     assets: {
       type: Array,
       default: () => []
+    }
+  },
+
+  components: { AppButton },
+
+  methods: {
+    goToCoin(id) {
+      this.$router.push({ name: 'coin-detail', params: { id } });
+    },
+
+    changeSortOrder() {
+      this.sortOrder = this.sortOrder == 1 ? -1 : 1;
     }
   }
 };
@@ -44,11 +121,11 @@ export default {
 
 <style scoped>
 .up::before {
-  content: "👆";
+  content: '👆';
 }
 
 .down::before {
-  content: "👇";
+  content: '👇';
 }
 
 td {
