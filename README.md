@@ -17,5 +17,5 @@ npm run build
 
 ### Linter
 ```
-npm lint lint
+npm run lint
 ```
